@@ -14,17 +14,17 @@ pml_write_files = function(x){
   }
 }
 
-url_training <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
-url_testing <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+url_training <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+url_testing <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
 pml.training <- read.csv(url_training, header=TRUE)
 pml.testing <- read.csv(url_testing, header=TRUE)
 
 inTrain = createDataPartition(pml.training$classe, p = 3/4)[[1]]
-training = pml.training[inTrain,-1]
+training = pml.training[inTrain,-(1:6)]
 validation = pml.training[-inTrain,-1]
 testing = pml.testing[,-1]
 
-pml.training[1:10,1:10]
+training[1:10,1:10]
 
 # summary(training)
 # sample<-sample(1:dim(training)[1],5)
