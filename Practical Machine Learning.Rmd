@@ -3,18 +3,85 @@ title: "Practical Machine Learning"
 output: html_document
 ---
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+### Assignment overview
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, we will use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset). 
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+The goal of this project is to predict the manner in which they did the exercise. This is the "classe" variable in the training set. We may use any of the other variables to predict with. The task is to create a report describing
+
+* how the model was built.
+* how cross validation was used, 
+* the expected out of sample error, 
+* why choices were made.
+
+We also need to use the prediction model to predict 20 different test cases. 
+
+### Preliminary data exploration
+To begin with, I loaded the necessary packages and set the seed.
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+library(caret)
+library(rattle)
+library(rpart.plot)
+library(randomForest)
+set.seed(3433)
+```
+After this, I started with some preliminary data exploration. Looking at the dataset, I saw the first column was displaying the record number, so I dropped this column from my data set.
+```{r,include=FALSE,echo=FALSE}
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+```
 
 ```{r}
-summary(cars)
+url_training <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+url_testing <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+pml.training <- read.csv(url_training, header=TRUE)
+pml.testing <- read.csv(url_testing, header=TRUE)
+
+```
+I split my dataset in a training set and a validation set.
+```{r}
+inTrain = createDataPartition(pml.training$classe, p = 3/4)[[1]]
+training = pml.training[inTrain,-1]
+validation = pml.training[-inTrain,-1]
+testing = pml.testing[,-1]
 ```
 
-You can also embed plots, for example:
-
-```{r, echo=FALSE}
-plot(cars)
+Next I had a a look at the variables, their type and their values.
+```{r, echo=TRUE, results='hide'}
+str(training)
+```
+I noticed there were a lot of variables with a large amount of empty values and/or NA. I tried to get rid of these by removing the columns with near zero variance.
+```{r}
+LowVar <-nearZeroVar(training,freq=90/10)
+training_pruned<-training[,-LowVar]
+```
+This was not sufficient to get rid of all the columns with a lot of NA. So I cleaned up the data set some more by removing columns with more than 14000 NA counts.
+```{r}
+training_pruned2<-training_pruned[,colSums(is.na(training_pruned))<14000]
+```
+This seemed to me a sufficient clean up of the dataset. I repeated the process for the validation and testing set.
+```{r}
+validation_pruned <- validation[,-LowVar]
+validation_pruned2 <- validation_pruned[,colSums(is.na(training_pruned))<14000]
+testing_pruned <- testing[,-LowVar]
+testing_pruned2 <- testing_pruned[,colSums(is.na(training_pruned))<14000]
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+### Modeling
+My first try was to use a Classification tree. I decided not to center and scale the variables, since this is not really useful for this method.
+```{r}
+modFit1 <- train(classe ~ .,method="rpart",data=training_pruned2)
+test_tree <- predict(modFit1,validation_pruned2)
+confusionMatrix(test_tree,validation_pruned2$classe)
+```
+The result was a bit disappointing so I tried the random forest method next.
+```{r}
+modFit2 <- train(classe ~ .,method="rf",data=training_pruned2)
+test <- predict(modFit2,validation_pruned2)
+confusionMatrix(test,validation_pruned2$classe)
+```
+
