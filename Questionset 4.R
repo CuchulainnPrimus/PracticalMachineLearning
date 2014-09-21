@@ -71,3 +71,22 @@ confusionMatrix(modPred,testing$diagnosis)[3]
 confusionMatrix(modPred2,testing$diagnosis)[3]
 confusionMatrix(modPred3,testing$diagnosis)[3]
 confusionMatrix(combPred,predDF$diagnosis)[3]
+
+
+##Question 3
+
+set.seed(3523)
+library(AppliedPredictiveModeling)
+library(caret)
+data(concrete)
+inTrain = createDataPartition(concrete$CompressiveStrength, p = 3/4)[[1]]
+training = concrete[ inTrain,]
+testing = concrete[-inTrain,]
+set.seed(233)
+modFit <- train(CompressiveStrength~.,data=training,method="lasso")
+modPred <- predict(modFit,testing)
+
+
+str(modPred)
+str(testing$CompressiveStrength)
+confusionMatrix(modPred,testing$CompressiveStrength)
