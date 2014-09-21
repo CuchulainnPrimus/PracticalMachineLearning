@@ -95,4 +95,4 @@ After cleaning up the data I used the Random Forest model to predict the results
 test <- predict(modFit2,testing_pruned2)
 test
 ```
-The expected error is equal to the error on the validation set. Apparently the test set contained only clearcut cases, since the result was 100% correct.
+The expected error is equal to the error on the validation set. The result was 100% correct.
